@@ -5,6 +5,8 @@ entityレイヤは、ドメインロジックを実装する責務を持ちま�
 ここでいう技術的な実装とは、「DBにMySQLを使って〜」や「ORMを使って〜」などです。これをentityレイヤに実装しないことで、entityレイヤが特定の技術に依存しないようになります。
 
 ```go
+package entity
+
 type User struct {
 	ID       uuid.UUID
 	Name     string
@@ -16,6 +18,8 @@ type User struct {
 以下のように、バリデーションも実装できる。
 
 ```go
+package entity
+
 type User struct {
 	ID       uuid.UUID
 	Name     string
@@ -52,4 +56,25 @@ const (
 	nameLengthMax = 255
 	nameLengthMin = 1
 )
+```
+
+また、EntityレイヤにRepositoryを置くこともある。
+
+```go
+package entity
+
+type User struct {
+	ID       uuid.UUID
+	Name     string
+	Email    string
+	Password string
+}
+
+type UserRepository interface {
+	CheckIfUserExists(ctx context.Context, email string) (bool, error)
+	GetUserByID(ctx context.Context, id string) (*User, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	Create(ctx context.Context, user *User) error
+	Update(ctx context.Context, user *User) error
+}
 ```
