@@ -4,7 +4,7 @@ entityレイヤは、ドメインロジックを実装する責務を持ちま�
 
 ここでいう技術的な実装とは、「DBにMySQLを使って〜」や「ORMを使って〜」などです。これをentityレイヤに実装しないことで、entityレイヤが特定の技術に依存しないようになります。
 
-```
+```go
 type User struct {
 	ID       uuid.UUID
 	Name     string
@@ -15,7 +15,7 @@ type User struct {
 
 以下のように、バリデーションも実装できる。
 
-```
+```go
 type User struct {
 	ID       uuid.UUID
 	Name     string
