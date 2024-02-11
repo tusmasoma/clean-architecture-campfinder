@@ -6,3 +6,9 @@
 今回は、前者の定義を採用します。すなわち、クリーンアーキテクチャとは以下の図に登場する用語や概念を用いて、4層レイヤーからなるAPIアーキテクチャを指すものとします。
 
 ![クリーンアーキテクチャ](https://github.com/tusmasoma/clean-architecture-campfinder/assets/104899572/ce8caa07-36ff-4d97-b201-5d559169eabc)
+
+## 今回の実装の注意点
+- RepositoryはUsecase層が持つことにします
+  - RepositoryをEntity層が持つこともできます
+
+- 出力をUsecase層のユースケースで実行することにします 
