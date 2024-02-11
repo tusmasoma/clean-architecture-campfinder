@@ -58,4 +58,35 @@ InputPortを導入しなくてもレイヤ間の依存関係がおかしくな�
    }
    ```
 
+### OutputPort
+OutputPortはサーバの出力に関するポートです。OutputPortはInterfaceAdapterレイヤのpresenterが実装します。Usecaseレイヤ内のユースケースはOutputPortに依存します。
+
+```go
+package usecase
+
+type UserOutputPort iterface {
+    Render(user *entity.User)
+}
+```
+
+```go
+package presenter
+
+type User struct {
+    w http.ResponseWriter
+}
+
+func NewUser(w http.ResponseWriter) usecase.UserOutputPort {
+    return &User{
+        w: w,
+    }
+}
+
+func (u *User) Render(user *entity.User) {
+    fmt.Fprint(u.w, user.Name)  // HTTPのレスポンスでentity.User.Nameを出力
+}
+```
+
+
+
 
