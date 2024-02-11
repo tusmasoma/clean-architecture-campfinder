@@ -17,20 +17,21 @@
   
   ```go
   package interactor
+  
   type User struct {
-	    OutputPort port.UserOutputPort
-	    UserRepo   port.UserRepository
+      OutputPort port.UserOutputPort
+      UserRepo   port.UserRepository
   }
 
   func (u *User) GetUserByID(ctx context.Context, userID string) {
-	    user, err := u.UserRepo.GetUserByID(ctx, userID)
-  
-	    if err != nil {
+      user, err := u.UserRepo.GetUserByID(ctx, userID)
+
+      if err != nil {
           u.OutputPort.RenderError(err)
-		      return
-	    }
+	  return
+      }
   
-      u.OutputPort.Render(user)
+      u.OutputPort.Render(user) // Usecase層でOutputPortを経由してpresenter実行
   }
   ```
 
@@ -48,11 +49,11 @@
   }
 
   func (u *User) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	    ctx := r.Context()
-	    userID := strings.TrimPrefix(r.URL.Path, "/user/")
-	    outputPort := u.OutputFactory(w)
-	    repository := u.RepoFactory(u.Conn)
-	    inputPort := u.InputFactory(outputPort, repository)
-	    inputPort.GetUserByID(ctx, userID)
+      ctx := r.Context()
+      userID := strings.TrimPrefix(r.URL.Path, "/user/")
+      outputPort := u.OutputFactory(w)
+      repository := u.RepoFactory(u.Conn)
+      inputPort := u.InputFactory(outputPort, repository)
+      inputPort.GetUserByID(ctx, userID) // controllerでInputPort経由してUsecase層のinteractorを実行
   }
   ```
