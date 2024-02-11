@@ -78,3 +78,5 @@ type UserRepository interface {
 	Update(ctx context.Context, user *User) error
 }
 ```
+
+ここでも再度言いますが、アーキテクチャの実装は自由です。
