@@ -11,4 +11,48 @@
 - RepositoryはUsecase層が持つことにします
   - RepositoryをEntity層が持つこともできます
 
-- 出力をUsecase層のユースケースで実行することにします 
+- 今回は、上記の図をできるだけ正確に実装する為、処理のフローも上記の図の右下に従います。つまり、出力をUsecase層のユースケースで実行することにします
+
+  例)
+  
+  ```go
+  package interactor
+  type User struct {
+	    OutputPort port.UserOutputPort
+	    UserRepo   port.UserRepository
+  }
+
+  func (u *User) GetUserByID(ctx context.Context, userID string) {
+	    user, err := u.UserRepo.GetUserByID(ctx, userID)
+  
+	    if err != nil {
+          u.OutputPort.RenderError(err)
+		      return
+	    }
+  
+      u.OutputPort.Render(user)
+  }
+  ```
+
+  ```go
+  package controller
+  
+  type User struct {
+	    OutputFactory func(w http.ResponseWriter) port.UserOutputPort
+	    // -> presenter.NewUserOutputPort
+	    InputFactory func(o port.UserOutputPort, u port.UserRepository) port.UserInputPort
+	    // -> interactor.NewUserInputPort
+	    RepoFactory func(c *sql.DB) port.UserRepository
+	    // -> gateway.NewUserRepository
+	    Conn *sql.DB
+  }
+
+  func (u *User) GetUserByID(w http.ResponseWriter, r *http.Request) {
+	    ctx := r.Context()
+	    userID := strings.TrimPrefix(r.URL.Path, "/user/")
+	    outputPort := u.OutputFactory(w)
+	    repository := u.RepoFactory(u.Conn)
+	    inputPort := u.InputFactory(outputPort, repository)
+	    inputPort.GetUserByID(ctx, userID)
+  }
+  ```
