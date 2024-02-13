@@ -3,11 +3,13 @@ package port
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/tusmasoma/clean-architecture-campfinder/entity"
 )
 
 type CommentInputPort interface {
 	GetCommentBySpotID(ctx context.Context, spotID string)
+	CreateComment(spotID uuid.UUID, userID uuid.UUID, starRate float64, text string)
 }
 
 type CommentOutputPort interface {
