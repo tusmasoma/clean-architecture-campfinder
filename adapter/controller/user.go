@@ -3,6 +3,7 @@ package controller
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -25,16 +26,15 @@ type UserCreateRequest struct {
 func (u *User) HandleUserCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var requestBody UserCreateRequest
-	if ok := isValidUserCreateRequest(r.Body, &requestBody); !ok {
-		http.Error(w, "Invalid user create request", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
 	outputport := u.OutputFactory(w)
 	repo := u.RepoFactory(u.Conn)
 	inputport := u.InputFactory(outputport, repo)
+
+	var requestBody UserCreateRequest
+	if ok := isValidUserCreateRequest(r.Body, &requestBody); !ok {
+		outputport.RenderError(fmt.Errorf("Invalid user create request: %d", http.StatusBadRequest))
+	}
+	defer r.Body.Close()
 
 	inputport.CreateUser(ctx, requestBody.Email, requestBody.Password)
 }
