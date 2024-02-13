@@ -15,7 +15,7 @@ import (
 
 type Comment struct {
 	OutputFactory   func(http.ResponseWriter) port.CommentOutputPort
-	InputFactory    func(o port.CommentOutputPort, c port.CommentRepository, u port.UserRepository) port.CommentInputPort
+	InputFactory    func(o port.CommentOutputPort, c port.CommentRepository) port.CommentInputPort
 	RepoFactory     func(c *sql.DB) port.CommentRepository
 	UserRepoFactory func(c *sql.DB) port.UserRepository
 	Conn            *sql.DB
@@ -41,7 +41,7 @@ func (c *Comment) HandleCommentGet(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, nil)
+	inputport := c.InputFactory(outputport, repo)
 
 	inputport.GetCommentBySpotID(ctx, spotID)
 }
@@ -51,7 +51,7 @@ func (c *Comment) HandleCommentCreate(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, nil)
+	inputport := c.InputFactory(outputport, repo)
 
 	userIDValue := ctx.Value(config.ContextUserIDKey)
 	userID, ok := userIDValue.(uuid.UUID)
@@ -89,7 +89,7 @@ func (c *Comment) HandleCommentUpdate(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, nil)
+	inputport := c.InputFactory(outputport, repo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
@@ -131,7 +131,7 @@ func (c *Comment) HandleCommentDelete(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, nil)
+	inputport := c.InputFactory(outputport, repo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
