@@ -74,3 +74,39 @@ func isValidateImageCreateRequest(body io.ReadCloser, requestBody *ImageCreateRe
 	}
 	return true
 }
+
+func (i *Image) HandleImageDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	outputport := i.OutputFactory(w)
+	repo := i.RepoFactory(i.Conn)
+	inputport := i.InputFactory(outputport, repo)
+
+	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
+	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
+	if !ok {
+		log.Print("Failed to retrieve userId from context")
+		outputport.RenderError(fmt.Errorf("user name not found in request context"))
+		return
+	}
+
+	ok, id, userID := isValidateImageDeleteRequest(r)
+	if !ok {
+		log.Print("Invalid image delete request")
+		outputport.RenderError(fmt.Errorf("Invalid image delete request"))
+		return
+	}
+
+	inputport.DeleteImage(ctx, id, userID, ctxUserID)
+}
+
+func isValidateImageDeleteRequest(r *http.Request) (bool, string, string) {
+	id := r.URL.Query().Get("id")
+	userID := r.URL.Query().Get("user_id")
+
+	if id == "" || userID == "" {
+		log.Printf("Missing required fields")
+		return false, "", ""
+	}
+	return true, id, userID
+}

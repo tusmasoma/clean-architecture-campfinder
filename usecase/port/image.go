@@ -10,6 +10,7 @@ import (
 type ImageInputPort interface {
 	GetSpotImgURLBySpotID(ctx context.Context, spotID string)
 	CreateImage(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, url string)
+	DeleteImage(ctx context.Context, id string, userID string, ctxUserID uuid.UUID)
 }
 
 type ImageOutputPort interface {
