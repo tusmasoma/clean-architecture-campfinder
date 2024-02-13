@@ -3,11 +3,13 @@ package port
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/tusmasoma/clean-architecture-campfinder/entity"
 )
 
 type ImageInputPort interface {
 	GetSpotImgURLBySpotID(ctx context.Context, spotID string)
+	CreateImage(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, url string)
 }
 
 type ImageOutputPort interface {

@@ -38,14 +38,14 @@ func (c *Comment) GetCommentBySpotID(ctx context.Context, spotID string) {
 	c.OutputPort.RenderWithJson(CommentGetResponse{Comments: comments})
 }
 
-func (c *Comment) CreateComment(spotID uuid.UUID, userID uuid.UUID, starRate float64, text string) {
+func (c *Comment) CreateComment(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string) {
 	comment := &entity.Comment{
 		SpotID:   spotID,
 		UserID:   userID,
 		StarRate: starRate,
 		Text:     text,
 	}
-	if err := c.CommentRepo.Create(context.Background(), comment); err != nil {
+	if err := c.CommentRepo.Create(ctx, comment); err != nil {
 		log.Printf("Failed to create comment: %v", err)
 		c.OutputPort.RenderError(err)
 		return

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/tusmasoma/clean-architecture-campfinder/entity"
 	"github.com/tusmasoma/clean-architecture-campfinder/usecase/port"
 )
@@ -34,4 +35,18 @@ func (i *Image) GetSpotImgURLBySpotID(ctx context.Context, spotID string) {
 		return
 	}
 	i.OutputPort.RenderWithJson(ImageGetResponse{Images: imgs})
+}
+
+func (i *Image) CreateImage(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, url string) {
+	img := &entity.Image{
+		SpotID: spotID,
+		UserID: userID,
+		URL:    url,
+	}
+	if err := i.ImageRepo.Create(ctx, img); err != nil {
+		log.Printf("Failed to create image: %v", err)
+		i.OutputPort.RenderError(err)
+		return
+	}
+	i.OutputPort.Render()
 }

@@ -69,7 +69,7 @@ func (c *Comment) HandleCommentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	inputport.CreateComment(requestBody.SpotID, userID, requestBody.StarRate, requestBody.Text)
+	inputport.CreateComment(ctx, requestBody.SpotID, userID, requestBody.StarRate, requestBody.Text)
 }
 
 func isValidateCommentCreateRequest(body io.ReadCloser, requestBody *CommentCreateRequest) bool {
