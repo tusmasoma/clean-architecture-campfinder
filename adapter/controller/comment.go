@@ -53,9 +53,9 @@ func (c *Comment) HandleCommentCreate(w http.ResponseWriter, r *http.Request) {
 	repo := c.RepoFactory(c.Conn)
 	inputport := c.InputFactory(outputport, repo, nil)
 
+	var ok bool
 	userID := ctx.Value(config.ContextUserIDKey)
-	userID, ok := userID.(uuid.UUID)
-
+	userID, ok = userID.(uuid.UUID)
 	if !ok {
 		log.Printf("Failed to retrieve userId from context")
 		outputport.RenderError(fmt.Errorf("user name not found in request context"))
