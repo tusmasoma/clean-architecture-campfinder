@@ -73,3 +73,16 @@ func isValidateSpotCreateRequest(body io.ReadCloser, requestBody *SpotCreateRequ
 	}
 	return true
 }
+
+func (s *Spot) HandleSpotGet(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	outputport := s.OutputFactory(w)
+	repo := s.RepoFactory(s.Conn)
+	inputport := s.InputFactory(outputport, repo)
+
+	categories := r.URL.Query()["category"]
+	spotID := r.URL.Query().Get("spot_id")
+
+	inputport.GetSpot(ctx, categories, spotID)
+}

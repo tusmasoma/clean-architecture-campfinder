@@ -22,6 +22,10 @@ func NewSpotInputPort(outputPort port.SpotOutputPort, spotRepository port.SpotRe
 	}
 }
 
+type GetResponse struct {
+	Spots []entity.Spot `json:"spots"`
+}
+
 func (s *Spot) CreateSpot(
 	ctx context.Context,
 	category string,
@@ -62,4 +66,27 @@ func (s *Spot) CreateSpot(
 	}
 
 	s.OutputPort.Render()
+}
+
+func (s *Spot) GetSpot(ctx context.Context, categories []string, spotID string) {
+	var allSpots []entity.Spot
+
+	for _, category := range categories {
+		spots, err := s.SpotRepo.GetSpotByCategory(ctx, category)
+		if err != nil {
+			log.Printf("Failed to get spot of %v: %v", category, err)
+			continue
+		}
+		allSpots = append(allSpots, spots...)
+	}
+
+	if spotID != "" {
+		spot, err := s.SpotRepo.GetSpotByID(ctx, spotID)
+		if err != nil {
+			log.Printf("Failed to get spot of %v: %v", spotID, err)
+		}
+		allSpots = append(allSpots, *spot)
+	}
+
+	s.OutputPort.RenderWithJson(GetResponse{Spots: allSpots})
 }

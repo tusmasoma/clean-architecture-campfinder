@@ -20,6 +20,7 @@ type SpotInputPort interface {
 		description string,
 		iconpath string,
 	)
+	GetSpot(ctx context.Context, categories []string, spotID string)
 }
 
 type SpotOutputPort interface {
