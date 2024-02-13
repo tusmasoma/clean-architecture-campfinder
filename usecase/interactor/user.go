@@ -30,10 +30,12 @@ func (u *User) CreateUser(ctx context.Context, email string, passward string) {
 	if err != nil {
 		log.Printf("Internal server error: %v", err)
 		u.OutputPort.RenderError(err)
+		return
 	}
 	if exists {
 		log.Printf("User with this name already exists - status: %d", http.StatusConflict)
 		u.OutputPort.RenderError(fmt.Errorf("user with this email already exists"))
+		return
 	}
 
 	var user entity.User
@@ -43,12 +45,14 @@ func (u *User) CreateUser(ctx context.Context, email string, passward string) {
 	if err != nil {
 		log.Printf("Internal server error: %v", err)
 		u.OutputPort.RenderError(err)
+		return
 	}
 	user.Password = passward
 
 	if err = u.UserRepo.Create(ctx, &user); err != nil {
 		log.Printf("Failed to create user: %v", err)
 		u.OutputPort.RenderError(err)
+		return
 	}
 
 	jwt, _ := auth.GenerateToken(user.ID.String(), user.Email)

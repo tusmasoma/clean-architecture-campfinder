@@ -43,10 +43,12 @@ func (s *Spot) CreateSpot(
 	if err != nil {
 		log.Printf("Internal server error: %v", err)
 		s.OutputPort.RenderError(err)
+		return
 	}
 	if !exists {
 		log.Printf("Spot with this name already exists - status: %d", http.StatusConflict)
 		s.OutputPort.RenderError(fmt.Errorf("user with this name already exists"))
+		return
 	}
 
 	if err = s.SpotRepo.Create(ctx, &entity.Spot{
@@ -63,6 +65,7 @@ func (s *Spot) CreateSpot(
 	}); err != nil {
 		log.Printf("Failed to create spot: %v", err)
 		s.OutputPort.RenderError(err)
+		return
 	}
 
 	s.OutputPort.Render()

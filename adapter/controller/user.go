@@ -33,6 +33,7 @@ func (u *User) HandleUserCreate(w http.ResponseWriter, r *http.Request) {
 	var requestBody UserCreateRequest
 	if ok := isValidUserCreateRequest(r.Body, &requestBody); !ok {
 		outputport.RenderError(fmt.Errorf("Invalid user create request: %d", http.StatusBadRequest))
+		return
 	}
 	defer r.Body.Close()
 

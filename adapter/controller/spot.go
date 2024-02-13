@@ -41,6 +41,7 @@ func (s *Spot) HandleSpotCreate(w http.ResponseWriter, r *http.Request) {
 	var requestBody SpotCreateRequest
 	if ok := isValidateSpotCreateRequest(r.Body, &requestBody); !ok {
 		outputport.RenderError(fmt.Errorf("Invalid spot create request: %d", http.StatusBadRequest))
+		return
 	}
 
 	inputport.CreateSpot(

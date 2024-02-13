@@ -10,6 +10,7 @@ import (
 type CommentInputPort interface {
 	GetCommentBySpotID(ctx context.Context, spotID string)
 	CreateComment(spotID uuid.UUID, userID uuid.UUID, starRate float64, text string)
+	UpdateComment(ctx context.Context, id uuid.UUID, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string, ctxUserID uuid.UUID)
 }
 
 type CommentOutputPort interface {
