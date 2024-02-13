@@ -2,6 +2,9 @@ package controller
 
 import (
 	"database/sql"
+	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/tusmasoma/clean-architecture-campfinder/usecase/port"
@@ -14,11 +17,37 @@ type User struct {
 	Conn          *sql.DB
 }
 
+type UserCreateRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
 func (u *User) HandleUserCreate(w http.ResponseWriter, r *http.Request) {
-	email := "example@gmail.com"
-	pasward := "hogehoge"
+	ctx := r.Context()
+
+	var requestBody UserCreateRequest
+	if ok := isValidUserCreateRequest(r.Body, &requestBody); !ok {
+		http.Error(w, "Invalid user create request", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
 	outputport := u.OutputFactory(w)
 	repo := u.RepoFactory(u.Conn)
 	inputport := u.InputFactory(outputport, repo)
-	inputport.CreateUser(r.Context(), email, pasward)
+
+	inputport.CreateUser(ctx, requestBody.Email, requestBody.Password)
+}
+
+func isValidUserCreateRequest(body io.ReadCloser, requestBody *UserCreateRequest) bool {
+	// リクエストボディのJSONを構造体にデコード
+	if err := json.NewDecoder(body).Decode(requestBody); err != nil {
+		log.Printf("Invalid request body: %v", err)
+		return false
+	}
+	if requestBody.Email == "" || requestBody.Password == "" {
+		log.Printf("Missing required fields: Name or Password")
+		return false
+	}
+	return true
 }
