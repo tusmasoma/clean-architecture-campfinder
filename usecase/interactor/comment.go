@@ -88,3 +88,24 @@ func (c *Comment) UpdateComment(
 	}
 	c.OutputPort.Render()
 }
+
+func (c *Comment) DeleteComment(ctx context.Context, id string, userID string, ctxUserID uuid.UUID) {
+	user, err := c.UserRepo.GetUserByID(ctx, ctxUserID.String())
+	if err != nil {
+		log.Printf("Failed to get user by id: %v", err)
+		c.OutputPort.RenderError(err)
+		return
+	}
+	if !user.IsAdmin && user.ID.String() != userID {
+		log.Print("Don't have permission to delete comment")
+		c.OutputPort.RenderError(fmt.Errorf("don't have permission to delete comment"))
+		return
+	}
+
+	if err = c.CommentRepo.Delete(ctx, id); err != nil {
+		log.Printf("Failed to delete comment: %v", err)
+		c.OutputPort.RenderError(err)
+		return
+	}
+	c.OutputPort.Render()
+}
