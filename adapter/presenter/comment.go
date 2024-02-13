@@ -13,23 +13,23 @@ type Comment struct {
 }
 
 func NewCommentOutputPort(w http.ResponseWriter) port.CommentOutputPort {
-	return &Spot{
+	return &Comment{
 		w: w,
 	}
 }
 
-func (s *Comment) Render() {
-	s.w.WriteHeader(http.StatusOK)
+func (c *Comment) Render() {
+	c.w.WriteHeader(http.StatusOK)
 }
 
-func (s *Comment) RenderError(err error) {
-	s.w.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprint(s.w, err)
+func (c *Comment) RenderError(err error) {
+	c.w.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprint(c.w, err)
 }
 
-func (s *Comment) RenderWithJson(response interface{}) {
-	s.w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(s.w).Encode(response); err != nil {
-		s.RenderError(err)
+func (c *Comment) RenderWithJson(response interface{}) {
+	c.w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(c.w).Encode(response); err != nil {
+		c.RenderError(err)
 	}
 }
