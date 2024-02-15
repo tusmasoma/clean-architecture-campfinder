@@ -15,7 +15,7 @@ import (
 
 type Comment struct {
 	OutputFactory   func(http.ResponseWriter) port.CommentOutputPort
-	InputFactory    func(o port.CommentOutputPort, c port.CommentRepository) port.CommentInputPort
+	InputFactory    func(o port.CommentOutputPort, c port.CommentRepository, u port.UserRepository) port.CommentInputPort
 	RepoFactory     func(c *sql.DB) port.CommentRepository
 	UserRepoFactory func(c *sql.DB) port.UserRepository
 	Conn            *sql.DB
@@ -41,7 +41,8 @@ func (c *Comment) HandleCommentGet(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo)
+	userRepo := c.UserRepoFactory(c.Conn)
+	inputport := c.InputFactory(outputport, repo, userRepo)
 
 	inputport.GetCommentBySpotID(ctx, spotID)
 }
@@ -51,7 +52,8 @@ func (c *Comment) HandleCommentCreate(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo)
+	userRepo := c.UserRepoFactory(c.Conn)
+	inputport := c.InputFactory(outputport, repo, userRepo)
 
 	userIDValue := ctx.Value(config.ContextUserIDKey)
 	userID, ok := userIDValue.(uuid.UUID)
@@ -89,7 +91,8 @@ func (c *Comment) HandleCommentUpdate(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo)
+	userRepo := c.UserRepoFactory(c.Conn)
+	inputport := c.InputFactory(outputport, repo, userRepo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
@@ -131,7 +134,8 @@ func (c *Comment) HandleCommentDelete(w http.ResponseWriter, r *http.Request) {
 
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo)
+	userRepo := c.UserRepoFactory(c.Conn)
+	inputport := c.InputFactory(outputport, repo, userRepo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)

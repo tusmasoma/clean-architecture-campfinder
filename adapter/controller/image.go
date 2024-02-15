@@ -15,7 +15,7 @@ import (
 
 type Image struct {
 	OutputFactory   func(http.ResponseWriter) port.ImageOutputPort
-	InputFactory    func(o port.ImageOutputPort, i port.ImageRepository) port.ImageInputPort
+	InputFactory    func(o port.ImageOutputPort, i port.ImageRepository, u port.UserRepository) port.ImageInputPort
 	RepoFactory     func(c *sql.DB) port.ImageRepository
 	UserRepoFactory func(c *sql.DB) port.UserRepository
 	Conn            *sql.DB
@@ -32,7 +32,8 @@ func (i *Image) HandleImageGet(w http.ResponseWriter, r *http.Request) {
 
 	outputport := i.OutputFactory(w)
 	repo := i.RepoFactory(i.Conn)
-	inputport := i.InputFactory(outputport, repo)
+	userRepo := i.UserRepoFactory(i.Conn)
+	inputport := i.InputFactory(outputport, repo, userRepo)
 
 	inputport.GetSpotImgURLBySpotID(ctx, spotID)
 }
@@ -42,7 +43,8 @@ func (i *Image) HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 
 	outputport := i.OutputFactory(w)
 	repo := i.RepoFactory(i.Conn)
-	inputport := i.InputFactory(outputport, repo)
+	userRepo := i.UserRepoFactory(i.Conn)
+	inputport := i.InputFactory(outputport, repo, userRepo)
 
 	userIDValue := ctx.Value(config.ContextUserIDKey)
 	userID, ok := userIDValue.(uuid.UUID)
@@ -80,7 +82,8 @@ func (i *Image) HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 
 	outputport := i.OutputFactory(w)
 	repo := i.RepoFactory(i.Conn)
-	inputport := i.InputFactory(outputport, repo)
+	userRepo := i.UserRepoFactory(i.Conn)
+	inputport := i.InputFactory(outputport, repo, userRepo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
