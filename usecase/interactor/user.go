@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/tusmasoma/clean-architecture-campfinder/entity"
 	"github.com/tusmasoma/clean-architecture-campfinder/internal/auth"
 	"github.com/tusmasoma/clean-architecture-campfinder/usecase/port"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -40,8 +38,8 @@ func (u *User) CreateUser(ctx context.Context, email string, passward string) {
 
 	var user entity.User
 	user.Email = email
-	user.Name = ExtractUsernameFromEmail(email)
-	passward, err = PasswordEncrypt(passward)
+	user.Name = auth.ExtractUsernameFromEmail(email)
+	passward, err = auth.PasswordEncrypt(passward)
 	if err != nil {
 		log.Printf("Internal server error: %v", err)
 		u.OutputPort.RenderError(err)
@@ -58,17 +56,4 @@ func (u *User) CreateUser(ctx context.Context, email string, passward string) {
 	jwt, _ := auth.GenerateToken(user.ID.String(), user.Email)
 
 	u.OutputPort.RenderWithToken(jwt)
-}
-
-func PasswordEncrypt(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(hash), err
-}
-
-func ExtractUsernameFromEmail(email string) string {
-	parts := strings.Split(email, "@")
-	if len(parts) > 0 {
-		return parts[0]
-	}
-	return ""
 }
