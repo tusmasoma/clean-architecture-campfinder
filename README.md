@@ -11,7 +11,7 @@
 - RepositoryはUsecase層が持つことにします
   - RepositoryをEntity層が持つこともできます
 
-- 今回は、上記の図をできるだけ正確に実装する為、処理のフローも上記の図の右下に従います。つまり、InputPort、OutputPortを実装し、それを経由して出力をUsecase層のユースケースで実行することにします
+- 今回は、上記の図をできるだけ正確に実装する為、処理のフローも上記の図の右下に従います。つまり、InputPort、OutputPortを実装し、それを経由して出力をUsecase層のユースケースで実行することにします([#v1.0.0](https://github.com/tusmasoma/clean-architecture-campfinder/releases/tag/v.1.0.0))
 
   例)
   
