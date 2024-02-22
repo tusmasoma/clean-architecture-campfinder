@@ -57,3 +57,5 @@
       inputPort.GetUserByID(ctx, userID) // controllerでInputPort経由してUsecase層のinteractorを実行
   }
   ```
+
+- #v1.1.0では、コントロールラーにてoutputPortの出力を実行するように変更しました。そちらのほうが、本来のユースケース層とコントローラの役目と合っているからです。
