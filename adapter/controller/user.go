@@ -13,7 +13,7 @@ import (
 
 type User struct {
 	OutputFactory func(http.ResponseWriter) port.UserOutputPort
-	InputFactory  func(o port.UserOutputPort, u port.UserRepository) port.UserInputPort
+	InputFactory  func(u port.UserRepository) port.UserInputPort
 	RepoFactory   func(c *sql.DB) port.UserRepository
 	Conn          *sql.DB
 }
@@ -28,7 +28,7 @@ func (u *User) HandleUserCreate(w http.ResponseWriter, r *http.Request) {
 
 	outputport := u.OutputFactory(w)
 	repo := u.RepoFactory(u.Conn)
-	inputport := u.InputFactory(outputport, repo)
+	inputport := u.InputFactory(repo)
 
 	var requestBody UserCreateRequest
 	if ok := isValidUserCreateRequest(r.Body, &requestBody); !ok {
@@ -37,7 +37,11 @@ func (u *User) HandleUserCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	inputport.CreateUser(ctx, requestBody.Email, requestBody.Password)
+	jwt, err := inputport.CreateUser(ctx, requestBody.Email, requestBody.Password)
+	if err != nil {
+		outputport.RenderError(err)
+	}
+	outputport.RenderWithToken(jwt)
 }
 
 func isValidUserCreateRequest(body io.ReadCloser, requestBody *UserCreateRequest) bool {

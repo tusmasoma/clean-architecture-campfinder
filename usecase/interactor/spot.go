@@ -11,19 +11,13 @@ import (
 )
 
 type Spot struct {
-	OutputPort port.SpotOutputPort
-	SpotRepo   port.SpotRepository
+	SpotRepo port.SpotRepository
 }
 
-func NewSpotInputPort(outputPort port.SpotOutputPort, spotRepository port.SpotRepository) port.SpotInputPort {
+func NewSpotInputPort(spotRepository port.SpotRepository) port.SpotInputPort {
 	return &Spot{
-		OutputPort: outputPort,
-		SpotRepo:   spotRepository,
+		SpotRepo: spotRepository,
 	}
-}
-
-type GetResponse struct {
-	Spots []entity.Spot `json:"spots"`
 }
 
 func (s *Spot) CreateSpot(
@@ -38,17 +32,15 @@ func (s *Spot) CreateSpot(
 	price string,
 	description string,
 	iconpath string,
-) {
+) error {
 	exists, err := s.SpotRepo.CheckIfSpotExists(ctx, lat, lng)
 	if err != nil {
 		log.Printf("Internal server error: %v", err)
-		s.OutputPort.RenderError(err)
-		return
+		return err
 	}
 	if !exists {
 		log.Printf("Spot with this name already exists - status: %d", http.StatusConflict)
-		s.OutputPort.RenderError(fmt.Errorf("user with this name already exists"))
-		return
+		return fmt.Errorf("user with this name already exists")
 	}
 
 	if err = s.SpotRepo.Create(ctx, &entity.Spot{
@@ -64,14 +56,13 @@ func (s *Spot) CreateSpot(
 		IconPath:    iconpath,
 	}); err != nil {
 		log.Printf("Failed to create spot: %v", err)
-		s.OutputPort.RenderError(err)
-		return
+		return err
 	}
 
-	s.OutputPort.Render()
+	return nil
 }
 
-func (s *Spot) GetSpot(ctx context.Context, categories []string, spotID string) {
+func (s *Spot) GetSpot(ctx context.Context, categories []string, spotID string) []entity.Spot {
 	var allSpots []entity.Spot
 
 	for _, category := range categories {
@@ -91,5 +82,5 @@ func (s *Spot) GetSpot(ctx context.Context, categories []string, spotID string) 
 		allSpots = append(allSpots, *spot)
 	}
 
-	s.OutputPort.RenderWithJson(GetResponse{Spots: allSpots})
+	return allSpots
 }

@@ -2,7 +2,6 @@ package interactor
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -12,28 +11,24 @@ import (
 )
 
 type User struct {
-	OutputPort port.UserOutputPort
-	UserRepo   port.UserRepository
+	UserRepo port.UserRepository
 }
 
-func NewUserInputPort(outputPort port.UserOutputPort, userRepository port.UserRepository) port.UserInputPort {
+func NewUserInputPort(userRepository port.UserRepository) port.UserInputPort {
 	return &User{
-		OutputPort: outputPort,
-		UserRepo:   userRepository,
+		UserRepo: userRepository,
 	}
 }
 
-func (u *User) CreateUser(ctx context.Context, email string, passward string) {
+func (u *User) CreateUser(ctx context.Context, email string, passward string) (string, error) {
 	exists, err := u.UserRepo.CheckIfUserExists(ctx, email)
 	if err != nil {
 		log.Printf("Internal server error: %v", err)
-		u.OutputPort.RenderError(err)
-		return
+		return "", err
 	}
 	if exists {
 		log.Printf("User with this name already exists - status: %d", http.StatusConflict)
-		u.OutputPort.RenderError(fmt.Errorf("user with this email already exists"))
-		return
+		return "", err
 	}
 
 	var user entity.User
@@ -42,18 +37,16 @@ func (u *User) CreateUser(ctx context.Context, email string, passward string) {
 	passward, err = auth.PasswordEncrypt(passward)
 	if err != nil {
 		log.Printf("Internal server error: %v", err)
-		u.OutputPort.RenderError(err)
-		return
+		return "", err
 	}
 	user.Password = passward
 
 	if err = u.UserRepo.Create(ctx, &user); err != nil {
 		log.Printf("Failed to create user: %v", err)
-		u.OutputPort.RenderError(err)
-		return
+		return "", err
 	}
 
 	jwt, _ := auth.GenerateToken(user.ID.String(), user.Email)
 
-	u.OutputPort.RenderWithToken(jwt)
+	return jwt, nil
 }

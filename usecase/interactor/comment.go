@@ -11,34 +11,27 @@ import (
 )
 
 type Comment struct {
-	OutputPort  port.CommentOutputPort
 	CommentRepo port.CommentRepository
 	UserRepo    port.UserRepository
 }
 
-func NewCommentInputPort(outputPort port.CommentOutputPort, commentRepository port.CommentRepository, userRepository port.UserRepository) port.CommentInputPort {
+func NewCommentInputPort(commentRepository port.CommentRepository, userRepository port.UserRepository) port.CommentInputPort {
 	return &Comment{
-		OutputPort:  outputPort,
 		CommentRepo: commentRepository,
 		UserRepo:    userRepository,
 	}
 }
 
-type CommentGetResponse struct {
-	Comments []entity.Comment `json:"comments"`
-}
-
-func (c *Comment) GetCommentBySpotID(ctx context.Context, spotID string) {
+func (c *Comment) GetCommentBySpotID(ctx context.Context, spotID string) []entity.Comment {
 	comments, err := c.CommentRepo.GetCommentBySpotID(ctx, spotID)
 	if err != nil {
 		log.Printf("Failed to get comments by spot id: %v", err)
-		c.OutputPort.RenderError(err)
-		return
+		return nil
 	}
-	c.OutputPort.RenderWithJson(CommentGetResponse{Comments: comments})
+	return comments
 }
 
-func (c *Comment) CreateComment(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string) {
+func (c *Comment) CreateComment(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string) error {
 	comment := &entity.Comment{
 		SpotID:   spotID,
 		UserID:   userID,
@@ -47,10 +40,9 @@ func (c *Comment) CreateComment(ctx context.Context, spotID uuid.UUID, userID uu
 	}
 	if err := c.CommentRepo.Create(ctx, comment); err != nil {
 		log.Printf("Failed to create comment: %v", err)
-		c.OutputPort.RenderError(err)
-		return
+		return err
 	}
-	c.OutputPort.Render()
+	return nil
 }
 
 func (c *Comment) UpdateComment(
@@ -61,17 +53,15 @@ func (c *Comment) UpdateComment(
 	starRate float64,
 	text string,
 	ctxUserID uuid.UUID,
-) {
+) error {
 	user, err := c.UserRepo.GetUserByID(ctx, ctxUserID.String())
 	if err != nil {
 		log.Printf("Failed to get user by id: %v", err)
-		c.OutputPort.RenderError(err)
-		return
+		return err
 	}
 	if !user.IsAdmin && user.ID != userID {
 		log.Print("Don't have permission to update comment")
-		c.OutputPort.RenderError(fmt.Errorf("don't have permission to update comment"))
-		return
+		return fmt.Errorf("don't have permission to update comment")
 	}
 
 	comment := entity.Comment{
@@ -84,28 +74,25 @@ func (c *Comment) UpdateComment(
 
 	if err := c.CommentRepo.Update(ctx, comment); err != nil {
 		log.Printf("Failed to update comment: %v", err)
-		c.OutputPort.RenderError(err)
+		return err
 	}
-	c.OutputPort.Render()
+	return nil
 }
 
-func (c *Comment) DeleteComment(ctx context.Context, id string, userID string, ctxUserID uuid.UUID) {
+func (c *Comment) DeleteComment(ctx context.Context, id string, userID string, ctxUserID uuid.UUID) error {
 	user, err := c.UserRepo.GetUserByID(ctx, ctxUserID.String())
 	if err != nil {
 		log.Printf("Failed to get user by id: %v", err)
-		c.OutputPort.RenderError(err)
-		return
+		return err
 	}
 	if !user.IsAdmin && user.ID.String() != userID {
 		log.Print("Don't have permission to delete comment")
-		c.OutputPort.RenderError(fmt.Errorf("don't have permission to delete comment"))
-		return
+		return fmt.Errorf("don't have permission to delete comment")
 	}
 
 	if err = c.CommentRepo.Delete(ctx, id); err != nil {
 		log.Printf("Failed to delete comment: %v", err)
-		c.OutputPort.RenderError(err)
-		return
+		return err
 	}
-	c.OutputPort.Render()
+	return nil
 }

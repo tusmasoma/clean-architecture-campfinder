@@ -10,12 +10,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tusmasoma/clean-architecture-campfinder/config"
+	"github.com/tusmasoma/clean-architecture-campfinder/entity"
 	"github.com/tusmasoma/clean-architecture-campfinder/usecase/port"
 )
 
 type Image struct {
 	OutputFactory   func(http.ResponseWriter) port.ImageOutputPort
-	InputFactory    func(o port.ImageOutputPort, i port.ImageRepository, u port.UserRepository) port.ImageInputPort
+	InputFactory    func(i port.ImageRepository, u port.UserRepository) port.ImageInputPort
 	RepoFactory     func(c *sql.DB) port.ImageRepository
 	UserRepoFactory func(c *sql.DB) port.UserRepository
 	Conn            *sql.DB
@@ -26,6 +27,10 @@ type ImageCreateRequest struct {
 	URL    string    `json:"url"`
 }
 
+type ImageGetResponse struct {
+	Images []entity.Image `json:"images"`
+}
+
 func (i *Image) HandleImageGet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	spotID := r.URL.Query().Get("spot_id")
@@ -33,9 +38,10 @@ func (i *Image) HandleImageGet(w http.ResponseWriter, r *http.Request) {
 	outputport := i.OutputFactory(w)
 	repo := i.RepoFactory(i.Conn)
 	userRepo := i.UserRepoFactory(i.Conn)
-	inputport := i.InputFactory(outputport, repo, userRepo)
+	inputport := i.InputFactory(repo, userRepo)
 
-	inputport.GetSpotImgURLBySpotID(ctx, spotID)
+	imgs := inputport.GetSpotImgURLBySpotID(ctx, spotID)
+	outputport.RenderWithJson(ImageGetResponse{Images: imgs})
 }
 
 func (i *Image) HandleImageCreate(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +50,7 @@ func (i *Image) HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 	outputport := i.OutputFactory(w)
 	repo := i.RepoFactory(i.Conn)
 	userRepo := i.UserRepoFactory(i.Conn)
-	inputport := i.InputFactory(outputport, repo, userRepo)
+	inputport := i.InputFactory(repo, userRepo)
 
 	userIDValue := ctx.Value(config.ContextUserIDKey)
 	userID, ok := userIDValue.(uuid.UUID)
@@ -62,7 +68,11 @@ func (i *Image) HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	inputport.CreateImage(ctx, requestBody.SpotID, userID, requestBody.URL)
+	if err := inputport.CreateImage(ctx, requestBody.SpotID, userID, requestBody.URL); err != nil {
+		outputport.RenderError(err)
+		return
+	}
+	outputport.Render()
 }
 
 func isValidateImageCreateRequest(body io.ReadCloser, requestBody *ImageCreateRequest) bool {
@@ -83,7 +93,7 @@ func (i *Image) HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 	outputport := i.OutputFactory(w)
 	repo := i.RepoFactory(i.Conn)
 	userRepo := i.UserRepoFactory(i.Conn)
-	inputport := i.InputFactory(outputport, repo, userRepo)
+	inputport := i.InputFactory(repo, userRepo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
@@ -100,7 +110,11 @@ func (i *Image) HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inputport.DeleteImage(ctx, id, userID, ctxUserID)
+	if err := inputport.DeleteImage(ctx, id, userID, ctxUserID); err != nil {
+		outputport.RenderError(err)
+		return
+	}
+	outputport.Render()
 }
 
 func isValidateImageDeleteRequest(r *http.Request) (bool, string, string) {

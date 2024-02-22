@@ -8,10 +8,10 @@ import (
 )
 
 type CommentInputPort interface {
-	GetCommentBySpotID(ctx context.Context, spotID string)
-	CreateComment(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string)
-	UpdateComment(ctx context.Context, id uuid.UUID, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string, ctxUserID uuid.UUID)
-	DeleteComment(ctx context.Context, id string, userID string, ctxUserID uuid.UUID)
+	GetCommentBySpotID(ctx context.Context, spotID string) []entity.Comment
+	CreateComment(ctx context.Context, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string) error
+	UpdateComment(ctx context.Context, id uuid.UUID, spotID uuid.UUID, userID uuid.UUID, starRate float64, text string, ctxUserID uuid.UUID) error
+	DeleteComment(ctx context.Context, id string, userID string, ctxUserID uuid.UUID) error
 }
 
 type CommentOutputPort interface {

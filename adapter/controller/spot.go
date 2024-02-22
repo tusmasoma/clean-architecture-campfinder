@@ -8,12 +8,13 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/tusmasoma/clean-architecture-campfinder/entity"
 	"github.com/tusmasoma/clean-architecture-campfinder/usecase/port"
 )
 
 type Spot struct {
 	OutputFactory func(http.ResponseWriter) port.SpotOutputPort
-	InputFactory  func(o port.SpotOutputPort, u port.SpotRepository) port.SpotInputPort
+	InputFactory  func(u port.SpotRepository) port.SpotInputPort
 	RepoFactory   func(c *sql.DB) port.SpotRepository
 	Conn          *sql.DB
 }
@@ -31,12 +32,16 @@ type SpotCreateRequest struct {
 	IconPath    string  `json:"iconpath"`
 }
 
+type GetResponse struct {
+	Spots []entity.Spot `json:"spots"`
+}
+
 func (s *Spot) HandleSpotCreate(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	outputport := s.OutputFactory(w)
 	repo := s.RepoFactory(s.Conn)
-	inputport := s.InputFactory(outputport, repo)
+	inputport := s.InputFactory(repo)
 
 	var requestBody SpotCreateRequest
 	if ok := isValidateSpotCreateRequest(r.Body, &requestBody); !ok {
@@ -44,7 +49,7 @@ func (s *Spot) HandleSpotCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inputport.CreateSpot(
+	if err := inputport.CreateSpot(
 		ctx,
 		requestBody.Category,
 		requestBody.Name,
@@ -56,7 +61,12 @@ func (s *Spot) HandleSpotCreate(w http.ResponseWriter, r *http.Request) {
 		requestBody.Price,
 		requestBody.Description,
 		requestBody.IconPath,
-	)
+	); err != nil {
+		outputport.RenderError(err)
+		return
+	}
+
+	outputport.Render()
 }
 
 func isValidateSpotCreateRequest(body io.ReadCloser, requestBody *SpotCreateRequest) bool {
@@ -80,10 +90,12 @@ func (s *Spot) HandleSpotGet(w http.ResponseWriter, r *http.Request) {
 
 	outputport := s.OutputFactory(w)
 	repo := s.RepoFactory(s.Conn)
-	inputport := s.InputFactory(outputport, repo)
+	inputport := s.InputFactory(repo)
 
 	categories := r.URL.Query()["category"]
 	spotID := r.URL.Query().Get("spot_id")
 
-	inputport.GetSpot(ctx, categories, spotID)
+	spots := inputport.GetSpot(ctx, categories, spotID)
+
+	outputport.RenderWithJson(GetResponse{Spots: spots})
 }

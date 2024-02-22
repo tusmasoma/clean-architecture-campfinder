@@ -19,8 +19,8 @@ type SpotInputPort interface {
 		price string,
 		description string,
 		iconpath string,
-	)
-	GetSpot(ctx context.Context, categories []string, spotID string)
+	) error
+	GetSpot(ctx context.Context, categories []string, spotID string) []entity.Spot
 }
 
 type SpotOutputPort interface {

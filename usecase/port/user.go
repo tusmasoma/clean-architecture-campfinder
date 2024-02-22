@@ -7,7 +7,7 @@ import (
 )
 
 type UserInputPort interface {
-	CreateUser(ctx context.Context, email string, passward string)
+	CreateUser(ctx context.Context, email string, passward string) (string, error)
 }
 
 type UserOutputPort interface {

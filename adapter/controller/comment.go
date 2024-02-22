@@ -10,12 +10,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tusmasoma/clean-architecture-campfinder/config"
+	"github.com/tusmasoma/clean-architecture-campfinder/entity"
 	"github.com/tusmasoma/clean-architecture-campfinder/usecase/port"
 )
 
 type Comment struct {
 	OutputFactory   func(http.ResponseWriter) port.CommentOutputPort
-	InputFactory    func(o port.CommentOutputPort, c port.CommentRepository, u port.UserRepository) port.CommentInputPort
+	InputFactory    func(c port.CommentRepository, u port.UserRepository) port.CommentInputPort
 	RepoFactory     func(c *sql.DB) port.CommentRepository
 	UserRepoFactory func(c *sql.DB) port.UserRepository
 	Conn            *sql.DB
@@ -35,6 +36,10 @@ type CommentUpdateRequest struct {
 	Text     string    `json:"text"`
 }
 
+type CommentGetResponse struct {
+	Comments []entity.Comment `json:"comments"`
+}
+
 func (c *Comment) HandleCommentGet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	spotID := r.URL.Query().Get("spot_id")
@@ -42,9 +47,11 @@ func (c *Comment) HandleCommentGet(w http.ResponseWriter, r *http.Request) {
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
 	userRepo := c.UserRepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, userRepo)
+	inputport := c.InputFactory(repo, userRepo)
 
-	inputport.GetCommentBySpotID(ctx, spotID)
+	comments := inputport.GetCommentBySpotID(ctx, spotID)
+
+	outputport.RenderWithJson(CommentGetResponse{Comments: comments})
 }
 
 func (c *Comment) HandleCommentCreate(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +60,7 @@ func (c *Comment) HandleCommentCreate(w http.ResponseWriter, r *http.Request) {
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
 	userRepo := c.UserRepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, userRepo)
+	inputport := c.InputFactory(repo, userRepo)
 
 	userIDValue := ctx.Value(config.ContextUserIDKey)
 	userID, ok := userIDValue.(uuid.UUID)
@@ -71,7 +78,11 @@ func (c *Comment) HandleCommentCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	inputport.CreateComment(ctx, requestBody.SpotID, userID, requestBody.StarRate, requestBody.Text)
+	if err := inputport.CreateComment(ctx, requestBody.SpotID, userID, requestBody.StarRate, requestBody.Text); err != nil {
+		outputport.RenderError(err)
+		return
+	}
+	outputport.Render()
 }
 
 func isValidateCommentCreateRequest(body io.ReadCloser, requestBody *CommentCreateRequest) bool {
@@ -92,7 +103,7 @@ func (c *Comment) HandleCommentUpdate(w http.ResponseWriter, r *http.Request) {
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
 	userRepo := c.UserRepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, userRepo)
+	inputport := c.InputFactory(repo, userRepo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
@@ -110,7 +121,17 @@ func (c *Comment) HandleCommentUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	inputport.UpdateComment(ctx, requestBody.ID, requestBody.SpotID, requestBody.UserID, requestBody.StarRate, requestBody.Text, ctxUserID)
+	if err := inputport.UpdateComment(
+		ctx, requestBody.ID,
+		requestBody.SpotID,
+		requestBody.UserID,
+		requestBody.StarRate,
+		requestBody.Text,
+		ctxUserID,
+	); err != nil {
+		outputport.RenderError(err)
+	}
+	outputport.Render()
 }
 
 func isValidateCommentUpdateRequest(body io.ReadCloser, requestBody *CommentUpdateRequest) bool {
@@ -135,7 +156,7 @@ func (c *Comment) HandleCommentDelete(w http.ResponseWriter, r *http.Request) {
 	outputport := c.OutputFactory(w)
 	repo := c.RepoFactory(c.Conn)
 	userRepo := c.UserRepoFactory(c.Conn)
-	inputport := c.InputFactory(outputport, repo, userRepo)
+	inputport := c.InputFactory(repo, userRepo)
 
 	ctxUserIDValue := ctx.Value(config.ContextUserIDKey)
 	ctxUserID, ok := ctxUserIDValue.(uuid.UUID)
@@ -152,7 +173,11 @@ func (c *Comment) HandleCommentDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inputport.DeleteComment(ctx, id, userID, ctxUserID)
+	if err := inputport.DeleteComment(ctx, id, userID, ctxUserID); err != nil {
+		outputport.RenderError(err)
+		return
+	}
+	outputport.Render()
 }
 
 func isValidateCommentDeleteRequest(r *http.Request) (bool, string, string) {
